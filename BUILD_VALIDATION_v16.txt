@@ -1,0 +1,11 @@
+source_v16 build validation
+
+- npm run lint : PASS
+- npm run build : PASS
+
+Applied changes:
+- Added bottom-center screen mode switch (모바일 모드 / PC모드)
+- Added mobile-only summary list for graph-by-export
+- Mobile summary shows country / bar / %
+- Mobile detail reveals origin rule / HS code / tariff details on tap
+- Kept desktop graph layout unchanged
