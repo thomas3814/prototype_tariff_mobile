@@ -175,10 +175,3 @@ npm run build
 
 ### Q4. Git을 잘 모르는데도 수정 가능한가요?
 가능합니다. GitHub 웹 화면에서 파일 업로드 / 수정 / 커밋만으로도 운영할 수 있습니다.
-
----
-
-## 문서 안내
-
-- 초보자용 상세 설명: [`docs/GITHUB_처음사용자_가이드.md`](./docs/GITHUB_처음사용자_가이드.md)
-- 앱 개발 설명: [`tariff-pages-app/README.md`](./tariff-pages-app/README.md)
