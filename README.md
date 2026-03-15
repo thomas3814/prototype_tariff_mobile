@@ -9,7 +9,6 @@
 - 실행 사이트: `https://thomas3814.github.io/prototype_tariff_mobile/`
 - 앱 소스 폴더: `tariff-pages-app/`
 - 엑셀 원본 파일: `tariff-pages-app/source-data/tariff-source.xlsx`
-- 초보자용 상세 가이드: [`docs/GITHUB_처음사용자_가이드.md`](./docs/GITHUB_처음사용자_가이드.md)
 
 ---
 
