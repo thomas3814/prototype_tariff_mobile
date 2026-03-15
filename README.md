@@ -182,5 +182,3 @@ npm run build
 
 - 초보자용 상세 설명: [`docs/GITHUB_처음사용자_가이드.md`](./docs/GITHUB_처음사용자_가이드.md)
 - 앱 개발 설명: [`tariff-pages-app/README.md`](./tariff-pages-app/README.md)
-- 변경 이력: [`CHANGELOG.md`](./CHANGELOG.md)
-- 기여 안내: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
