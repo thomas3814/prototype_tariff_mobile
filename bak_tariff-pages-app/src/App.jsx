@@ -5,6 +5,7 @@ import FilterPanel from './components/FilterPanel.jsx';
 import FooterNote from './components/FooterNote.jsx';
 import GraphSection from './components/GraphSection.jsx';
 import MetaPanel from './components/MetaPanel.jsx';
+import ViewModeSwitch from './components/ViewModeSwitch.jsx';
 import { getGithubSourceContext, getSnapshotSourceLabel } from './lib/githubRepoClient.js';
 import {
   buildDetailCards,
@@ -18,6 +19,7 @@ import {
 
 const DEFAULT_PRODUCT_ID = 'lcd-tv-set-852872';
 const THEME_STORAGE_KEY = 'tariff-viewer-theme';
+const LAYOUT_MODE_STORAGE_KEY = 'tariff-viewer-layout-mode';
 
 const EMPTY_FILTERS = {
   productId: '',
@@ -39,6 +41,28 @@ function getInitialTheme() {
   }
 
   return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function detectViewportLayoutMode() {
+  if (typeof window === 'undefined') {
+    return 'desktop';
+  }
+
+  return window.matchMedia?.('(max-width: 720px)').matches ? 'mobile' : 'desktop';
+}
+
+function getInitialLayoutMode() {
+  if (typeof window === 'undefined') {
+    return 'desktop';
+  }
+
+  const savedLayoutMode = window.localStorage.getItem(LAYOUT_MODE_STORAGE_KEY);
+
+  if (savedLayoutMode === 'mobile' || savedLayoutMode === 'desktop') {
+    return savedLayoutMode;
+  }
+
+  return detectViewportLayoutMode();
 }
 
 function getDefaultProductId(snapshot) {
@@ -138,6 +162,7 @@ export default function App() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [theme, setTheme] = useState(() => getInitialTheme());
+  const [layoutMode, setLayoutMode] = useState(() => getInitialLayoutMode());
   const [status, setStatus] = useState({
     loading: true,
     error: '',
@@ -148,6 +173,11 @@ export default function App() {
     document.documentElement.style.colorScheme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.layoutMode = layoutMode;
+    window.localStorage.setItem(LAYOUT_MODE_STORAGE_KEY, layoutMode);
+  }, [layoutMode]);
 
   useEffect(() => {
     let active = true;
@@ -199,6 +229,7 @@ export default function App() {
     () => buildGraphModel(selectedProduct, filters),
     [selectedProduct, filters],
   );
+  const shellClassName = `app-shell app-shell--${layoutMode}`;
 
   function resetAllFilters() {
     setFilters(createDefaultFilters(snapshot));
@@ -254,9 +285,17 @@ export default function App() {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
   }
 
+  function handleLayoutModeChange(nextMode) {
+    if (nextMode !== 'mobile' && nextMode !== 'desktop') {
+      return;
+    }
+
+    setLayoutMode(nextMode);
+  }
+
   if (status.loading) {
     return (
-      <div className="app-shell">
+      <div className={shellClassName}>
         <main className="app">
           <section className="panel loading-state">
             <p>데이터를 불러오는 중입니다.</p>
@@ -268,7 +307,7 @@ export default function App() {
 
   if (status.error) {
     return (
-      <div className="app-shell">
+      <div className={shellClassName}>
         <main className="app">
           <section className="panel error-state">
             <h1>데이터를 불러오지 못했습니다.</h1>
@@ -283,7 +322,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={shellClassName}>
       <main className="app">
         <FilterPanel
           productOptions={productOptions}
@@ -312,6 +351,7 @@ export default function App() {
           <GraphSection
             graphModel={graphModel}
             collapsedGroups={collapsedGroups}
+            layoutMode={layoutMode}
             onToggleGroup={toggleGraphGroup}
           />
         ) : null}
@@ -324,6 +364,7 @@ export default function App() {
         />
 
         <FooterNote githubSourceContext={githubSourceContext} />
+        <ViewModeSwitch layoutMode={layoutMode} onChange={handleLayoutModeChange} />
       </main>
     </div>
   );

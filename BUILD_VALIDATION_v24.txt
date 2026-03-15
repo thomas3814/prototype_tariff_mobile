@@ -1,0 +1,16 @@
+[Build Validation - v24]
+
+Validated in local container:
+1. cd tariff-pages-app
+2. npm install
+3. npm run lint
+4. npm run build
+
+Result:
+- npm install: success
+- npm run lint: success
+- npm run build: success
+
+Generated dist assets:
+- dist/assets/index-cdLCxrU1.css
+- dist/assets/index-C0661GGW.js

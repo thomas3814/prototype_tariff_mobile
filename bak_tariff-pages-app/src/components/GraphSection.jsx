@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { getNumericTariffValue } from '../shared/tariffFormat.js';
 
 function MetricColumn({ label, rawValue, displayValue, maxNumericValue, highlighted = false }) {
@@ -60,11 +61,13 @@ function GraphEntry({ entry, maxNumericValue }) {
 }
 
 function CountryCard({ countryItem, maxNumericValue }) {
+  const countryLabel = countryItem.countryLabel ?? countryItem.country;
+
   return (
     <article className="graph-country-card">
       <header className="graph-country-card__header">
         <div>
-          <h3>{countryItem.country}</h3>
+          <h3>{countryLabel}</h3>
         </div>
       </header>
 
@@ -75,6 +78,10 @@ function CountryCard({ countryItem, maxNumericValue }) {
       </div>
     </article>
   );
+}
+
+function getGroupCountryCount(group) {
+  return group.countryCount ?? group.countries.length;
 }
 
 function ExpandedContinentSection({ group, maxNumericValue, onToggleGroup }) {
@@ -93,14 +100,14 @@ function ExpandedContinentSection({ group, maxNumericValue, onToggleGroup }) {
 
         <div className="graph-strip__title">
           <strong>{group.continent}</strong>
-          <span className="graph-strip__count">({group.countries.length})</span>
+          <span className="graph-strip__count">({getGroupCountryCount(group)})</span>
         </div>
       </header>
 
       <div className="graph-strip__countries">
         {group.countries.map((countryItem) => (
           <CountryCard
-            key={countryItem.country}
+            key={countryItem.countryKey ?? countryItem.country}
             countryItem={countryItem}
             maxNumericValue={maxNumericValue}
           />
@@ -119,8 +126,426 @@ function CollapsedContinentSection({ group, onToggleGroup }) {
         onClick={() => onToggleGroup(group.continent)}
       >
         <strong>{group.continent}</strong>
-        <span>펼치기</span>
+        <span className="graph-strip__collapsed-count">({getGroupCountryCount(group)})</span>
+        <span className="graph-strip__collapsed-action">펼치기</span>
       </button>
+    </section>
+  );
+}
+
+function flattenCountryGroups(groups) {
+  return groups.flatMap((group) => group.countries.map((countryItem) => ({
+    ...countryItem,
+    continent: countryItem.continent ?? group.continent,
+  })));
+}
+
+function getGroupCountryTotal(groups) {
+  return groups.reduce((count, group) => count + getGroupCountryCount(group), 0);
+}
+
+function getSummaryEntry(entries) {
+  if (!entries?.length) {
+    return null;
+  }
+
+  return [...entries].sort((left, right) => {
+    const leftNumeric = getNumericTariffValue(left.displayTariffRaw);
+    const rightNumeric = getNumericTariffValue(right.displayTariffRaw);
+
+    if (rightNumeric !== null && leftNumeric === null) {
+      return 1;
+    }
+
+    if (rightNumeric === null && leftNumeric !== null) {
+      return -1;
+    }
+
+    if (rightNumeric !== null && leftNumeric !== null && rightNumeric !== leftNumeric) {
+      return rightNumeric - leftNumeric;
+    }
+
+    return left.sourceRowNumber - right.sourceRowNumber;
+  })[0];
+}
+
+function getSummaryNumericValue(countryItem) {
+  const summaryEntry = getSummaryEntry(countryItem.entries);
+
+  if (!summaryEntry) {
+    return null;
+  }
+
+  return getNumericTariffValue(summaryEntry.displayTariffRaw);
+}
+
+function getCountryListMaxNumericValue(countries) {
+  return Math.max(...countries.map((countryItem) => getSummaryNumericValue(countryItem) ?? 0), 0);
+}
+
+function getCompactAxisLabel(axisTitle) {
+  if (axisTitle === '수출국') {
+    return '수출';
+  }
+
+  if (axisTitle === '수입국') {
+    return '수입';
+  }
+
+  return axisTitle;
+}
+
+function getMobileBarTone(entry) {
+  if (!entry) {
+    return 'agreement';
+  }
+
+  return entry.displaySource === '기본관세' || entry.xMarked ? 'base' : 'agreement';
+}
+
+function getCountryDomId(countryKey) {
+  return String(countryKey)
+    .replace(/[\s/|]+/g, '-')
+    .replace(/[^\w\-가-힣]+/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'country-detail';
+}
+
+function getEntrySignature(entry) {
+  return [
+    entry.hsCode,
+    entry.baseTariffRaw,
+    entry.baseTariffDisplay,
+    entry.agreementTariffRaw,
+    entry.agreementTariffDisplay,
+    entry.displayTariffRaw,
+    entry.displayTariffDisplay,
+    entry.displaySource,
+    entry.xMarked ? '1' : '0',
+    entry.originRule,
+  ].join('||');
+}
+
+function getCountryEntriesSignature(countryItem) {
+  return countryItem.entries.map((entry) => getEntrySignature(entry)).join('###');
+}
+
+function mergeEquivalentCountriesByEntries(countries) {
+  const mergedBySignature = new Map();
+
+  countries.forEach((countryItem) => {
+    const signature = getCountryEntriesSignature(countryItem);
+    const existingItem = mergedBySignature.get(signature);
+
+    if (existingItem) {
+      existingItem.countryNames.push(countryItem.country);
+      existingItem.countryLabel = existingItem.countryNames.join(' / ');
+      existingItem.countryKey = existingItem.countryNames.join('|');
+      existingItem.originalCountryCount += 1;
+      return;
+    }
+
+    mergedBySignature.set(signature, {
+      ...countryItem,
+      countryNames: [countryItem.country],
+      countryLabel: countryItem.country,
+      countryKey: countryItem.country,
+      originalCountryCount: 1,
+    });
+  });
+
+  return [...mergedBySignature.values()].map((countryItem) => ({
+    ...countryItem,
+    country: countryItem.countryLabel,
+  }));
+}
+
+function getMobileDisplayGroups(graphModel) {
+  const limit = graphModel.mode === 'graph-by-export' ? 10 : Number.POSITIVE_INFINITY;
+  let remaining = limit;
+
+  return graphModel.groups.reduce((displayGroups, group) => {
+    if (remaining === 0) {
+      return displayGroups;
+    }
+
+    const sourceCountries = Number.isFinite(remaining)
+      ? group.countries.slice(0, remaining)
+      : group.countries;
+
+    if (!sourceCountries.length) {
+      return displayGroups;
+    }
+
+    if (Number.isFinite(remaining)) {
+      remaining = Math.max(remaining - sourceCountries.length, 0);
+    }
+
+    const countries = graphModel.mode === 'graph-by-import'
+      ? mergeEquivalentCountriesByEntries(sourceCountries)
+      : sourceCountries.map((countryItem) => ({
+        ...countryItem,
+        countryLabel: countryItem.country,
+        countryKey: countryItem.country,
+      }));
+
+    displayGroups.push({
+      ...group,
+      countries,
+      countryCount: sourceCountries.length,
+    });
+
+    return displayGroups;
+  }, []);
+}
+
+function MobileGraphSummary({ fixedCountryLabel, axisTitle, totalCountryCount }) {
+  return (
+    <div className="mobile-graph-summary" aria-label="모바일 그래프 요약 정보">
+      <span className="mobile-graph-summary__item">
+        <span className="mobile-graph-summary__label">고정:</span>
+        <strong>{fixedCountryLabel}</strong>
+      </span>
+      <span className="mobile-graph-summary__item">
+        <span className="mobile-graph-summary__label">축 :</span>
+        <strong>{getCompactAxisLabel(axisTitle)}</strong>
+      </span>
+      <span className="mobile-graph-summary__item">
+        <strong>{totalCountryCount}개국</strong>
+      </span>
+      <span className="mobile-graph-summary__legend" aria-label="막대 색상 범례">
+        <span className="mobile-graph-summary__legend-item">
+          <span className="mobile-graph-summary__dot mobile-graph-summary__dot--agreement" aria-hidden="true" />
+          <span>협정</span>
+        </span>
+        <span className="mobile-graph-summary__legend-item">
+          <span className="mobile-graph-summary__dot mobile-graph-summary__dot--base" aria-hidden="true" />
+          <span>기본</span>
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function MobileCountryDetail({ entry }) {
+  return (
+    <section className="mobile-country-detail">
+      <header className="mobile-country-detail__header">
+        <strong>HS {entry.hsCode}</strong>
+        <span className="pill pill--accent mobile-country-detail__pill">
+          {entry.displayTariffDisplay}
+        </span>
+      </header>
+
+      <dl className="mobile-country-detail__grid">
+        <div>
+          <dt>원산지 기준</dt>
+          <dd>{entry.originRule}</dd>
+        </div>
+        <div>
+          <dt>적용 관세</dt>
+          <dd>
+            {entry.displayTariffDisplay}
+            {' '}
+            ({entry.displaySource})
+          </dd>
+        </div>
+        <div>
+          <dt>협정관세</dt>
+          <dd>{entry.agreementTariffDisplay}</dd>
+        </div>
+        <div>
+          <dt>기본관세</dt>
+          <dd>{entry.baseTariffDisplay}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, compact = false }) {
+  const countryLabel = countryItem.countryLabel ?? countryItem.country;
+  const countryKey = countryItem.countryKey ?? countryLabel;
+  const detailId = `mobile-country-detail-${getCountryDomId(countryKey)}`;
+  const summaryEntry = getSummaryEntry(countryItem.entries);
+  const summaryValue = summaryEntry?.displayTariffDisplay ?? '-';
+  const summaryNumericValue = getSummaryNumericValue(countryItem);
+  const width = summaryNumericValue !== null && maxNumericValue > 0
+    ? `${Math.max((summaryNumericValue / maxNumericValue) * 100, summaryNumericValue > 0 ? 12 : 4)}%`
+    : summaryNumericValue === 0
+      ? '4%'
+      : '0%';
+  const rowClassName = [
+    'mobile-country-row',
+    isExpanded ? 'mobile-country-row--expanded' : '',
+    compact ? 'mobile-country-row--compact' : '',
+    (countryItem.originalCountryCount ?? 1) > 1 ? 'mobile-country-row--merged' : '',
+  ].filter(Boolean).join(' ');
+  const summaryClassName = [
+    'mobile-country-row__summary',
+    compact ? 'mobile-country-row__summary--compact' : '',
+  ].filter(Boolean).join(' ');
+  const barToneClassName = [
+    'mobile-country-row__bar',
+    `mobile-country-row__bar--${getMobileBarTone(summaryEntry)}`,
+    summaryNumericValue === 0 ? 'mobile-country-row__bar--zero' : '',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <article className={rowClassName}>
+      <button
+        className={summaryClassName}
+        type="button"
+        onClick={() => onToggle(countryKey)}
+        aria-expanded={isExpanded}
+        aria-controls={detailId}
+      >
+        <span className="mobile-country-row__label">{countryLabel}</span>
+        <span className="mobile-country-row__track" aria-hidden="true">
+          <span
+            className={barToneClassName}
+            style={{ width }}
+          />
+        </span>
+        <span className="mobile-country-row__value">{summaryValue}</span>
+      </button>
+
+      {isExpanded ? (
+        <div className="mobile-country-row__details" id={detailId}>
+          {countryItem.entries.map((entry) => (
+            <MobileCountryDetail key={entry.rowKey} entry={entry} />
+          ))}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function MobileCollapsedContinentChip({ group, onToggleGroup }) {
+  const countryCount = getGroupCountryCount(group);
+
+  return (
+    <button
+      className="mobile-continent-chip"
+      type="button"
+      onClick={() => onToggleGroup(group.continent)}
+      aria-expanded="false"
+      aria-label={`${group.continent}(${countryCount}) 펼치기`}
+    >
+      <span className="mobile-continent-chip__text">{`${group.continent}(${countryCount}) 펼치기`}</span>
+    </button>
+  );
+}
+
+function MobileContinentSection({
+  group,
+  maxNumericValue,
+  expandedCountry,
+  onToggleCountry,
+  onToggleGroup,
+}) {
+  const countryCount = getGroupCountryCount(group);
+
+  return (
+    <section className="mobile-continent-section">
+      <div className="mobile-continent-section__expanded-layout">
+        <div className="mobile-continent-section__countries">
+          {group.countries.map((countryItem) => (
+            <MobileCountryRow
+              key={countryItem.countryKey ?? countryItem.country}
+              countryItem={countryItem}
+              maxNumericValue={maxNumericValue}
+              isExpanded={expandedCountry === (countryItem.countryKey ?? countryItem.country)}
+              onToggle={onToggleCountry}
+              compact
+            />
+          ))}
+        </div>
+
+        <button
+          className="button button--ghost button--compact mobile-continent-section__side-toggle"
+          type="button"
+          onClick={() => onToggleGroup(group.continent)}
+          aria-expanded="true"
+          aria-label={`${group.continent}(${countryCount}) 접기`}
+        >
+          <span className="mobile-continent-section__side-inline">{`${group.continent}(${countryCount}) 접기`}</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup }) {
+  const [expandedCountry, setExpandedCountry] = useState('');
+
+  const displayGroups = useMemo(
+    () => getMobileDisplayGroups(graphModel),
+    [graphModel],
+  );
+  const countries = useMemo(
+    () => flattenCountryGroups(displayGroups),
+    [displayGroups],
+  );
+  const maxNumericValue = useMemo(
+    () => getCountryListMaxNumericValue(countries),
+    [countries],
+  );
+  const totalCountryCount = useMemo(
+    () => getGroupCountryTotal(displayGroups),
+    [displayGroups],
+  );
+  const collapsedGroupList = useMemo(
+    () => displayGroups.filter((group) => Boolean(collapsedGroups?.[group.continent])),
+    [displayGroups, collapsedGroups],
+  );
+  const expandedGroupList = useMemo(
+    () => displayGroups.filter((group) => !collapsedGroups?.[group.continent]),
+    [displayGroups, collapsedGroups],
+  );
+
+  function handleToggleCountry(countryKey) {
+    setExpandedCountry((current) => (current === countryKey ? '' : countryKey));
+  }
+
+  return (
+    <section className="panel">
+      <div className="panel__header panel__header--mobile-graph">
+        <div>
+          <h2>{graphModel.title}</h2>
+        </div>
+        <MobileGraphSummary
+          fixedCountryLabel={graphModel.fixedCountryLabel}
+          axisTitle={graphModel.axisTitle}
+          totalCountryCount={totalCountryCount}
+        />
+      </div>
+
+      {collapsedGroupList.length ? (
+        <div className="mobile-continent-chip-list" aria-label="접힌 대륙 펼치기 버튼 목록">
+          {collapsedGroupList.map((group) => (
+            <MobileCollapsedContinentChip
+              key={group.continent}
+              group={group}
+              onToggleGroup={onToggleGroup}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mobile-continent-list" aria-label="모바일 대륙별 국가 그래프 목록">
+        {expandedGroupList.map((group) => (
+          <MobileContinentSection
+            key={group.continent}
+            group={group}
+            maxNumericValue={maxNumericValue}
+            expandedCountry={expandedCountry}
+            onToggleCountry={handleToggleCountry}
+            onToggleGroup={onToggleGroup}
+          />
+        ))}
+      </div>
     </section>
   );
 }
@@ -128,10 +553,22 @@ function CollapsedContinentSection({ group, onToggleGroup }) {
 export default function GraphSection({
   graphModel,
   collapsedGroups,
+  layoutMode = 'desktop',
   onToggleGroup,
 }) {
   if (!graphModel) {
     return null;
+  }
+
+  if (layoutMode === 'mobile' && ['graph-by-export', 'graph-by-import'].includes(graphModel.mode)) {
+    return (
+      <MobileCountryGraphSection
+        key={graphModel.title}
+        graphModel={graphModel}
+        collapsedGroups={collapsedGroups}
+        onToggleGroup={onToggleGroup}
+      />
+    );
   }
 
   const expandedGroupCount = graphModel.groups.filter(
