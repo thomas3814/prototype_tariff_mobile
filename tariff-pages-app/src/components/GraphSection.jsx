@@ -194,7 +194,7 @@ function mergeMatchingCountriesWithinGroup(group) {
 
     if (existing) {
       existing.countries.push(countryItem.country);
-      existing.label = `${existing.label} / ${countryItem.country}`;
+      existing.label = `${existing.label}/${countryItem.country}`;
       return;
     }
 
@@ -241,9 +241,7 @@ function buildMobileGroups(graphModel) {
     })
     .filter(Boolean);
 
-  const groups = isImportAxisGraph
-    ? baseGroups.map((group) => mergeMatchingCountriesWithinGroup(group))
-    : baseGroups;
+  const groups = baseGroups.map((group) => mergeMatchingCountriesWithinGroup(group));
 
   return {
     groups,
@@ -375,7 +373,18 @@ function MobileCountryDetail({ entry }) {
   );
 }
 
-function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, compact = false, labelWidth }) {
+function MobileCountryRow({
+  countryItem,
+  maxNumericValue,
+  isExpanded,
+  onToggle,
+  isLabelOpen = false,
+  onToggleLabel,
+  compact = false,
+  tight = false,
+  smallerMergedLabel = false,
+  labelWidth,
+}) {
   const summaryEntry = getSummaryEntry(countryItem.entries);
   const summaryValue = summaryEntry?.displayTariffDisplay ?? '-';
   const summaryNumericValue = getSummaryNumericValue(countryItem);
@@ -393,21 +402,35 @@ function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, 
     'mobile-country-row',
     isExpanded ? 'mobile-country-row--expanded' : '',
     compact ? 'mobile-country-row--compact' : '',
+    tight ? 'mobile-country-row--tight' : '',
   ].filter(Boolean).join(' ');
   const summaryClassName = [
     'mobile-country-row__summary',
     compact ? 'mobile-country-row__summary--compact' : '',
+    tight ? 'mobile-country-row__summary--tight' : '',
     isMergedCountry ? 'mobile-country-row__summary--merged' : '',
   ].filter(Boolean).join(' ');
   const labelClassName = [
     'mobile-country-row__label',
     isMergedCountry ? 'mobile-country-row__label--merged' : '',
+    isMergedCountry && smallerMergedLabel ? 'mobile-country-row__label--merged-small' : '',
   ].filter(Boolean).join(' ');
   const barToneClassName = [
     'mobile-country-row__bar',
     `mobile-country-row__bar--${getMobileBarTone(summaryEntry)}`,
     summaryNumericValue === 0 ? 'mobile-country-row__bar--zero' : '',
   ].filter(Boolean).join(' ');
+  const labelPopoverId = `${detailId}-label`;
+
+  function handleLabelTap(event) {
+    if (!isMergedCountry) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleLabel?.(countryKey);
+  }
 
   return (
     <article className={rowClassName} style={rowStyle}>
@@ -419,7 +442,15 @@ function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, 
         aria-controls={detailId}
         title={`${countryLabel} ${summaryValue}`.trim()}
       >
-        <span className={labelClassName} title={countryLabel}>{countryLabel}</span>
+        <span className="mobile-country-row__label-wrap">
+          <span
+            className={[labelClassName, isMergedCountry ? 'mobile-country-row__label--touchable' : ''].filter(Boolean).join(' ')}
+            title={countryLabel}
+            onClick={isMergedCountry ? handleLabelTap : undefined}
+          >
+            {countryLabel}
+          </span>
+        </span>
         <span className="mobile-country-row__track" aria-hidden="true">
           <span
             className={barToneClassName}
@@ -428,6 +459,12 @@ function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, 
         </span>
         <span className="mobile-country-row__value">{summaryValue}</span>
       </button>
+
+      {isMergedCountry && isLabelOpen ? (
+        <div className="mobile-country-row__label-popover" id={labelPopoverId} role="status" aria-live="polite">
+          {countryLabel}
+        </div>
+      ) : null}
 
       {isExpanded ? (
         <div className="mobile-country-row__details" id={detailId}>
@@ -460,10 +497,14 @@ function MobileContinentSection({
   group,
   maxNumericValue,
   expandedCountry,
+  openLabelCountry,
   onToggleCountry,
+  onToggleLabel,
   onToggleGroup,
   uniformToggleWidth,
   labelWidth,
+  tightRows = false,
+  smallerMergedLabel = false,
 }) {
   const sideToggleLabel = getContinentToggleLabel(group, '접기');
   const sectionStyle = uniformToggleWidth ? { '--mobile-side-toggle-width': uniformToggleWidth } : undefined;
@@ -482,7 +523,11 @@ function MobileContinentSection({
                 maxNumericValue={maxNumericValue}
                 isExpanded={expandedCountry === countryKey}
                 onToggle={onToggleCountry}
+                isLabelOpen={openLabelCountry === countryKey}
+                onToggleLabel={onToggleLabel}
                 compact
+                tight={tightRows}
+                smallerMergedLabel={smallerMergedLabel}
                 labelWidth={labelWidth}
               />
             );
@@ -506,6 +551,8 @@ function MobileContinentSection({
 
 function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup }) {
   const [expandedCountry, setExpandedCountry] = useState('');
+  const [openLabelCountry, setOpenLabelCountry] = useState('');
+  const isImportAxisGraph = graphModel.mode === 'graph-by-import';
   const mobileGraphData = useMemo(
     () => buildMobileGroups(graphModel),
     [graphModel],
@@ -525,7 +572,12 @@ function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup 
   const labelWidth = '4.15rem';
 
   function handleToggleCountry(countryKey) {
+    setOpenLabelCountry('');
     setExpandedCountry((current) => (current === countryKey ? '' : countryKey));
+  }
+
+  function handleToggleLabel(countryKey) {
+    setOpenLabelCountry((current) => (current === countryKey ? '' : countryKey));
   }
 
   return (
@@ -560,10 +612,14 @@ function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup 
             group={group}
             maxNumericValue={mobileGraphData.maxNumericValue}
             expandedCountry={expandedCountry}
+            openLabelCountry={openLabelCountry}
             onToggleCountry={handleToggleCountry}
+            onToggleLabel={handleToggleLabel}
             onToggleGroup={onToggleGroup}
             uniformToggleWidth={uniformToggleWidth}
             labelWidth={labelWidth}
+            tightRows={isImportAxisGraph}
+            smallerMergedLabel={isImportAxisGraph}
           />
         ))}
       </div>

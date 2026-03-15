@@ -13,7 +13,7 @@ on:
       - 'tariff-pages-app/package-lock.json'
       - 'tariff-pages-app/vite.config.js'
       - 'tariff-pages-app/eslint.config.js'
-      - '.github/workflows/deploy.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:

@@ -61,13 +61,11 @@ function GraphEntry({ entry, maxNumericValue }) {
 }
 
 function CountryCard({ countryItem, maxNumericValue }) {
-  const countryLabel = countryItem.countryLabel ?? countryItem.country;
-
   return (
     <article className="graph-country-card">
       <header className="graph-country-card__header">
         <div>
-          <h3>{countryLabel}</h3>
+          <h3>{countryItem.country}</h3>
         </div>
       </header>
 
@@ -78,10 +76,6 @@ function CountryCard({ countryItem, maxNumericValue }) {
       </div>
     </article>
   );
-}
-
-function getGroupCountryCount(group) {
-  return group.countryCount ?? group.countries.length;
 }
 
 function ExpandedContinentSection({ group, maxNumericValue, onToggleGroup }) {
@@ -100,14 +94,14 @@ function ExpandedContinentSection({ group, maxNumericValue, onToggleGroup }) {
 
         <div className="graph-strip__title">
           <strong>{group.continent}</strong>
-          <span className="graph-strip__count">({getGroupCountryCount(group)})</span>
+          <span className="graph-strip__count">({group.countries.length})</span>
         </div>
       </header>
 
       <div className="graph-strip__countries">
         {group.countries.map((countryItem) => (
           <CountryCard
-            key={countryItem.countryKey ?? countryItem.country}
+            key={countryItem.country}
             countryItem={countryItem}
             maxNumericValue={maxNumericValue}
           />
@@ -126,22 +120,134 @@ function CollapsedContinentSection({ group, onToggleGroup }) {
         onClick={() => onToggleGroup(group.continent)}
       >
         <strong>{group.continent}</strong>
-        <span className="graph-strip__collapsed-count">({getGroupCountryCount(group)})</span>
+        <span className="graph-strip__collapsed-count">({group.countries.length})</span>
         <span className="graph-strip__collapsed-action">펼치기</span>
       </button>
     </section>
   );
 }
 
-function flattenCountryGroups(groups) {
-  return groups.flatMap((group) => group.countries.map((countryItem) => ({
+function flattenCountries(graphModel) {
+  return graphModel.groups.flatMap((group) => group.countries.map((countryItem) => ({
     ...countryItem,
     continent: countryItem.continent ?? group.continent,
   })));
 }
 
-function getGroupCountryTotal(groups) {
-  return groups.reduce((count, group) => count + getGroupCountryCount(group), 0);
+function getCountryItemLabel(countryItem) {
+  return countryItem.label ?? countryItem.country;
+}
+
+function getCountryItemKey(countryItem) {
+  return countryItem.key ?? countryItem.countries?.join('|') ?? countryItem.country;
+}
+
+function getSafeDomId(value) {
+  return String(value)
+    .trim()
+    .replace(/[^0-9A-Za-z가-힣_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'row';
+}
+
+function getGroupCountryCount(group) {
+  return group.countryCount ?? group.countries.length;
+}
+
+function getContinentToggleLabel(group, actionLabel) {
+  const countryCount = getGroupCountryCount(group);
+  return `${group.continent}(${countryCount}) ${actionLabel}`;
+}
+
+function getUniformContinentToggleWidth(groups) {
+  const longestLabelLength = groups.reduce(
+    (maxLength, group) => Math.max(maxLength, getContinentToggleLabel(group, '접기').length),
+    0,
+  );
+
+  return `${Math.max(4.6, Math.min(6.2, longestLabelLength * 0.42 + 1.15))}rem`;
+}
+
+function getCountrySignature(countryItem) {
+  return JSON.stringify(
+    countryItem.entries.map((entry) => ({
+      hsCode: entry.hsCode,
+      baseTariffRaw: entry.baseTariffRaw,
+      baseTariffDisplay: entry.baseTariffDisplay,
+      agreementTariffRaw: entry.agreementTariffRaw,
+      agreementTariffDisplay: entry.agreementTariffDisplay,
+      displayTariffRaw: entry.displayTariffRaw,
+      displayTariffDisplay: entry.displayTariffDisplay,
+      displaySource: entry.displaySource,
+      xMarked: Boolean(entry.xMarked),
+      originRule: entry.originRule,
+    })),
+  );
+}
+
+function mergeMatchingCountriesWithinGroup(group) {
+  const mergedItems = [];
+  const bucketBySignature = new Map();
+
+  group.countries.forEach((countryItem) => {
+    const signature = getCountrySignature(countryItem);
+    const existing = bucketBySignature.get(signature);
+
+    if (existing) {
+      existing.countries.push(countryItem.country);
+      existing.label = `${existing.label}/${countryItem.country}`;
+      return;
+    }
+
+    const nextItem = {
+      ...countryItem,
+      key: `${group.continent}-${countryItem.country}`,
+      countries: [countryItem.country],
+      label: countryItem.country,
+    };
+
+    bucketBySignature.set(signature, nextItem);
+    mergedItems.push(nextItem);
+  });
+
+  return {
+    ...group,
+    countries: mergedItems.map((countryItem) => ({
+      ...countryItem,
+      key: `${group.continent}-${countryItem.countries.join('|')}`,
+    })),
+  };
+}
+
+function buildMobileGroups(graphModel) {
+  const isImportAxisGraph = graphModel.mode === 'graph-by-import';
+  const visibleCountries = isImportAxisGraph
+    ? flattenCountries(graphModel)
+    : flattenCountries(graphModel).slice(0, 10);
+  const visibleCountrySet = new Set(visibleCountries.map((countryItem) => countryItem.country));
+
+  const baseGroups = graphModel.groups
+    .map((group) => {
+      const countries = group.countries.filter((countryItem) => visibleCountrySet.has(countryItem.country));
+
+      if (countries.length === 0) {
+        return null;
+      }
+
+      return {
+        continent: group.continent,
+        countryCount: countries.length,
+        countries,
+      };
+    })
+    .filter(Boolean);
+
+  const groups = baseGroups.map((group) => mergeMatchingCountriesWithinGroup(group));
+
+  return {
+    groups,
+    totalCountryCount: baseGroups.reduce((count, group) => count + getGroupCountryCount(group), 0),
+    maxNumericValue: getCountryListMaxNumericValue(groups.flatMap((group) => group.countries)),
+  };
 }
 
 function getSummaryEntry(entries) {
@@ -201,103 +307,6 @@ function getMobileBarTone(entry) {
   }
 
   return entry.displaySource === '기본관세' || entry.xMarked ? 'base' : 'agreement';
-}
-
-function getCountryDomId(countryKey) {
-  return String(countryKey)
-    .replace(/[\s/|]+/g, '-')
-    .replace(/[^\w\-가-힣]+/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    || 'country-detail';
-}
-
-function getEntrySignature(entry) {
-  return [
-    entry.hsCode,
-    entry.baseTariffRaw,
-    entry.baseTariffDisplay,
-    entry.agreementTariffRaw,
-    entry.agreementTariffDisplay,
-    entry.displayTariffRaw,
-    entry.displayTariffDisplay,
-    entry.displaySource,
-    entry.xMarked ? '1' : '0',
-    entry.originRule,
-  ].join('||');
-}
-
-function getCountryEntriesSignature(countryItem) {
-  return countryItem.entries.map((entry) => getEntrySignature(entry)).join('###');
-}
-
-function mergeEquivalentCountriesByEntries(countries) {
-  const mergedBySignature = new Map();
-
-  countries.forEach((countryItem) => {
-    const signature = getCountryEntriesSignature(countryItem);
-    const existingItem = mergedBySignature.get(signature);
-
-    if (existingItem) {
-      existingItem.countryNames.push(countryItem.country);
-      existingItem.countryLabel = existingItem.countryNames.join(' / ');
-      existingItem.countryKey = existingItem.countryNames.join('|');
-      existingItem.originalCountryCount += 1;
-      return;
-    }
-
-    mergedBySignature.set(signature, {
-      ...countryItem,
-      countryNames: [countryItem.country],
-      countryLabel: countryItem.country,
-      countryKey: countryItem.country,
-      originalCountryCount: 1,
-    });
-  });
-
-  return [...mergedBySignature.values()].map((countryItem) => ({
-    ...countryItem,
-    country: countryItem.countryLabel,
-  }));
-}
-
-function getMobileDisplayGroups(graphModel) {
-  const limit = graphModel.mode === 'graph-by-export' ? 10 : Number.POSITIVE_INFINITY;
-  let remaining = limit;
-
-  return graphModel.groups.reduce((displayGroups, group) => {
-    if (remaining === 0) {
-      return displayGroups;
-    }
-
-    const sourceCountries = Number.isFinite(remaining)
-      ? group.countries.slice(0, remaining)
-      : group.countries;
-
-    if (!sourceCountries.length) {
-      return displayGroups;
-    }
-
-    if (Number.isFinite(remaining)) {
-      remaining = Math.max(remaining - sourceCountries.length, 0);
-    }
-
-    const countries = graphModel.mode === 'graph-by-import'
-      ? mergeEquivalentCountriesByEntries(sourceCountries)
-      : sourceCountries.map((countryItem) => ({
-        ...countryItem,
-        countryLabel: countryItem.country,
-        countryKey: countryItem.country,
-      }));
-
-    displayGroups.push({
-      ...group,
-      countries,
-      countryCount: sourceCountries.length,
-    });
-
-    return displayGroups;
-  }, []);
 }
 
 function MobileGraphSummary({ fixedCountryLabel, axisTitle, totalCountryCount }) {
@@ -364,44 +373,79 @@ function MobileCountryDetail({ entry }) {
   );
 }
 
-function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, compact = false }) {
-  const countryLabel = countryItem.countryLabel ?? countryItem.country;
-  const countryKey = countryItem.countryKey ?? countryLabel;
-  const detailId = `mobile-country-detail-${getCountryDomId(countryKey)}`;
+function MobileCountryRow({
+  countryItem,
+  maxNumericValue,
+  isExpanded,
+  onToggle,
+  isLabelOpen = false,
+  onToggleLabel,
+  compact = false,
+  labelWidth,
+}) {
   const summaryEntry = getSummaryEntry(countryItem.entries);
   const summaryValue = summaryEntry?.displayTariffDisplay ?? '-';
   const summaryNumericValue = getSummaryNumericValue(countryItem);
+  const countryLabel = getCountryItemLabel(countryItem);
+  const countryKey = getCountryItemKey(countryItem);
+  const detailId = `mobile-country-detail-${getSafeDomId(countryKey)}`;
   const width = summaryNumericValue !== null && maxNumericValue > 0
     ? `${Math.max((summaryNumericValue / maxNumericValue) * 100, summaryNumericValue > 0 ? 12 : 4)}%`
     : summaryNumericValue === 0
       ? '4%'
       : '0%';
+  const isMergedCountry = Array.isArray(countryItem.countries) && countryItem.countries.length > 1;
+  const rowStyle = labelWidth ? { '--mobile-country-label-width': labelWidth } : undefined;
   const rowClassName = [
     'mobile-country-row',
     isExpanded ? 'mobile-country-row--expanded' : '',
     compact ? 'mobile-country-row--compact' : '',
-    (countryItem.originalCountryCount ?? 1) > 1 ? 'mobile-country-row--merged' : '',
   ].filter(Boolean).join(' ');
   const summaryClassName = [
     'mobile-country-row__summary',
     compact ? 'mobile-country-row__summary--compact' : '',
+    isMergedCountry ? 'mobile-country-row__summary--merged' : '',
+  ].filter(Boolean).join(' ');
+  const labelClassName = [
+    'mobile-country-row__label',
+    isMergedCountry ? 'mobile-country-row__label--merged' : '',
   ].filter(Boolean).join(' ');
   const barToneClassName = [
     'mobile-country-row__bar',
     `mobile-country-row__bar--${getMobileBarTone(summaryEntry)}`,
     summaryNumericValue === 0 ? 'mobile-country-row__bar--zero' : '',
   ].filter(Boolean).join(' ');
+  const labelPopoverId = `${detailId}-label`;
+
+  function handleLabelTap(event) {
+    if (!isMergedCountry) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleLabel?.(countryKey);
+  }
 
   return (
-    <article className={rowClassName}>
+    <article className={rowClassName} style={rowStyle}>
       <button
         className={summaryClassName}
         type="button"
         onClick={() => onToggle(countryKey)}
         aria-expanded={isExpanded}
         aria-controls={detailId}
+        title={`${countryLabel} ${summaryValue}`.trim()}
       >
-        <span className="mobile-country-row__label">{countryLabel}</span>
+        <span className="mobile-country-row__label-wrap">
+          <span
+            className={[labelClassName, isMergedCountry ? 'mobile-country-row__label--touchable' : ''].filter(Boolean).join(' ')}
+            title={countryLabel}
+            onClick={isMergedCountry ? handleLabelTap : undefined}
+          >
+            {countryLabel}
+          </span>
+        </span>
         <span className="mobile-country-row__track" aria-hidden="true">
           <span
             className={barToneClassName}
@@ -410,6 +454,12 @@ function MobileCountryRow({ countryItem, maxNumericValue, isExpanded, onToggle, 
         </span>
         <span className="mobile-country-row__value">{summaryValue}</span>
       </button>
+
+      {isMergedCountry && isLabelOpen ? (
+        <div className="mobile-country-row__label-popover" id={labelPopoverId} role="status" aria-live="polite">
+          {countryLabel}
+        </div>
+      ) : null}
 
       {isExpanded ? (
         <div className="mobile-country-row__details" id={detailId}>
@@ -442,25 +492,37 @@ function MobileContinentSection({
   group,
   maxNumericValue,
   expandedCountry,
+  openLabelCountry,
   onToggleCountry,
+  onToggleLabel,
   onToggleGroup,
+  uniformToggleWidth,
+  labelWidth,
 }) {
-  const countryCount = getGroupCountryCount(group);
+  const sideToggleLabel = getContinentToggleLabel(group, '접기');
+  const sectionStyle = uniformToggleWidth ? { '--mobile-side-toggle-width': uniformToggleWidth } : undefined;
 
   return (
-    <section className="mobile-continent-section">
+    <section className="mobile-continent-section" style={sectionStyle}>
       <div className="mobile-continent-section__expanded-layout">
         <div className="mobile-continent-section__countries">
-          {group.countries.map((countryItem) => (
-            <MobileCountryRow
-              key={countryItem.countryKey ?? countryItem.country}
-              countryItem={countryItem}
-              maxNumericValue={maxNumericValue}
-              isExpanded={expandedCountry === (countryItem.countryKey ?? countryItem.country)}
-              onToggle={onToggleCountry}
-              compact
-            />
-          ))}
+          {group.countries.map((countryItem) => {
+            const countryKey = getCountryItemKey(countryItem);
+
+            return (
+              <MobileCountryRow
+                key={countryKey}
+                countryItem={countryItem}
+                maxNumericValue={maxNumericValue}
+                isExpanded={expandedCountry === countryKey}
+                onToggle={onToggleCountry}
+                isLabelOpen={openLabelCountry === countryKey}
+                onToggleLabel={onToggleLabel}
+                compact
+                labelWidth={labelWidth}
+              />
+            );
+          })}
         </div>
 
         <button
@@ -468,9 +530,10 @@ function MobileContinentSection({
           type="button"
           onClick={() => onToggleGroup(group.continent)}
           aria-expanded="true"
-          aria-label={`${group.continent}(${countryCount}) 접기`}
+          aria-label={sideToggleLabel}
+          title={sideToggleLabel}
         >
-          <span className="mobile-continent-section__side-inline">{`${group.continent}(${countryCount}) 접기`}</span>
+          <span className="mobile-continent-section__side-inline">{sideToggleLabel}</span>
         </button>
       </div>
     </section>
@@ -479,34 +542,32 @@ function MobileContinentSection({
 
 function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup }) {
   const [expandedCountry, setExpandedCountry] = useState('');
-
-  const displayGroups = useMemo(
-    () => getMobileDisplayGroups(graphModel),
+  const [openLabelCountry, setOpenLabelCountry] = useState('');
+  const mobileGraphData = useMemo(
+    () => buildMobileGroups(graphModel),
     [graphModel],
   );
-  const countries = useMemo(
-    () => flattenCountryGroups(displayGroups),
-    [displayGroups],
-  );
-  const maxNumericValue = useMemo(
-    () => getCountryListMaxNumericValue(countries),
-    [countries],
-  );
-  const totalCountryCount = useMemo(
-    () => getGroupCountryTotal(displayGroups),
-    [displayGroups],
-  );
   const collapsedGroupList = useMemo(
-    () => displayGroups.filter((group) => Boolean(collapsedGroups?.[group.continent])),
-    [displayGroups, collapsedGroups],
+    () => mobileGraphData.groups.filter((group) => Boolean(collapsedGroups?.[group.continent])),
+    [mobileGraphData, collapsedGroups],
   );
   const expandedGroupList = useMemo(
-    () => displayGroups.filter((group) => !collapsedGroups?.[group.continent]),
-    [displayGroups, collapsedGroups],
+    () => mobileGraphData.groups.filter((group) => !collapsedGroups?.[group.continent]),
+    [mobileGraphData, collapsedGroups],
   );
+  const uniformToggleWidth = useMemo(
+    () => getUniformContinentToggleWidth(mobileGraphData.groups),
+    [mobileGraphData],
+  );
+  const labelWidth = '4.15rem';
 
   function handleToggleCountry(countryKey) {
+    setOpenLabelCountry('');
     setExpandedCountry((current) => (current === countryKey ? '' : countryKey));
+  }
+
+  function handleToggleLabel(countryKey) {
+    setOpenLabelCountry((current) => (current === countryKey ? '' : countryKey));
   }
 
   return (
@@ -518,7 +579,7 @@ function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup 
         <MobileGraphSummary
           fixedCountryLabel={graphModel.fixedCountryLabel}
           axisTitle={graphModel.axisTitle}
-          totalCountryCount={totalCountryCount}
+          totalCountryCount={mobileGraphData.totalCountryCount}
         />
       </div>
 
@@ -539,10 +600,14 @@ function MobileCountryGraphSection({ graphModel, collapsedGroups, onToggleGroup 
           <MobileContinentSection
             key={group.continent}
             group={group}
-            maxNumericValue={maxNumericValue}
+            maxNumericValue={mobileGraphData.maxNumericValue}
             expandedCountry={expandedCountry}
+            openLabelCountry={openLabelCountry}
             onToggleCountry={handleToggleCountry}
+            onToggleLabel={handleToggleLabel}
             onToggleGroup={onToggleGroup}
+            uniformToggleWidth={uniformToggleWidth}
+            labelWidth={labelWidth}
           />
         ))}
       </div>
