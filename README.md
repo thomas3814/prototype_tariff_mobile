@@ -81,7 +81,6 @@ prototype_tariff_mobile/
    ├─ public/data/        # 빌드 시 사용되는 JSON 데이터
    ├─ source-data/        # 원본 Excel 보관 위치
    ├─ scripts/            # Excel → JSON 생성 스크립트
-   ├─ dist/               # 빌드 결과물
    └─ README.md           # 앱 개발용 설명
 
 
