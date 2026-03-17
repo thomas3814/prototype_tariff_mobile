@@ -314,31 +314,45 @@ function ComparisonMiniTable({ entry, compact = false }) {
   );
 }
 
-function ComparisonEntryMeta({ entry, compact = false }) {
+function ComparisonEntryMeta({
+  entry,
+  compact = false,
+  showOriginRule = true,
+  showHsCode = true,
+  showSelectedTariff = true,
+  className = '',
+}) {
   const selectedLabel = getSelectedTariffLabel(entry);
-  const className = [
+  const metaClassName = [
     'comparison-entry-meta',
     compact ? 'comparison-entry-meta--compact' : '',
+    className,
   ].filter(Boolean).join(' ');
 
   return (
-    <dl className={className}>
-      <div>
-        <dt>원산지 기준</dt>
-        <dd>{entry.originRule}</dd>
-      </div>
-      <div>
-        <dt>HS</dt>
-        <dd>{entry.hsCode}</dd>
-      </div>
-      <div>
-        <dt>채택 관세</dt>
-        <dd>
-          {entry.displayTariffDisplay}
-          {' '}
-          ({selectedLabel})
-        </dd>
-      </div>
+    <dl className={metaClassName}>
+      {showOriginRule ? (
+        <div>
+          <dt>원산지 기준</dt>
+          <dd>{entry.originRule}</dd>
+        </div>
+      ) : null}
+      {showHsCode ? (
+        <div>
+          <dt>HS</dt>
+          <dd>{entry.hsCode}</dd>
+        </div>
+      ) : null}
+      {showSelectedTariff ? (
+        <div>
+          <dt>채택 관세</dt>
+          <dd>
+            {entry.displayTariffDisplay}
+            {' '}
+            ({selectedLabel})
+          </dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -559,16 +573,18 @@ function DesktopGroupedComparisonSection({ graphModel, collapsedGroups, onToggle
 }
 
 function MobileCountryDetailEntry({ entry }) {
-  const selectedLabel = getSelectedTariffLabel(entry);
-
   return (
     <section className="comparison-mobile-detail-item">
-      <header className="comparison-mobile-detail-item__header">
+      <header className="comparison-mobile-detail-item__header comparison-mobile-detail-item__header--compact">
         <strong>HS {entry.hsCode}</strong>
-        <span className="comparison-source-pill">{selectedLabel} 채택</span>
       </header>
-      <ComparisonMiniTable entry={entry} compact />
-      <ComparisonEntryMeta entry={entry} compact />
+      <ComparisonEntryMeta
+        entry={entry}
+        compact
+        showHsCode={false}
+        showSelectedTariff={false}
+        className="comparison-entry-meta--mobile-compact"
+      />
     </section>
   );
 }

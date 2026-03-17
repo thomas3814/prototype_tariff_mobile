@@ -166,7 +166,7 @@ function applySingleCountryPairSlots(groups) {
     if (pendingSingleGroups.length === 1) {
       result.push({
         ...pendingSingleGroups[0],
-        singleCountryPairSlot: 'center',
+        singleCountryPairSlot: 'left',
       });
     } else if (pendingSingleGroups.length === 2) {
       result.push(
@@ -204,9 +204,21 @@ function applySingleCountryPairSlots(groups) {
   return result;
 }
 
-function MobileGraphSummary({ fixedCountryLabel, axisTitle, totalCountryCount, showSelectedLegend = false }) {
+function MobileGraphSummary({
+  fixedCountryLabel,
+  axisTitle,
+  totalCountryCount,
+  showSelectedLegend = false,
+  graphMode = '',
+}) {
   return (
-    <div className="mobile-graph-summary" aria-label="모바일 그래프 요약 정보">
+    <div
+      className={[
+        'mobile-graph-summary',
+        graphMode ? `mobile-graph-summary--${graphMode}` : '',
+      ].filter(Boolean).join(' ')}
+      aria-label="모바일 그래프 요약 정보"
+    >
       <span className="mobile-graph-summary__item">
         <span className="mobile-graph-summary__label">고정:</span>
         <strong>{fixedCountryLabel}</strong>
@@ -302,31 +314,45 @@ function ComparisonMiniTable({ entry, compact = false }) {
   );
 }
 
-function ComparisonEntryMeta({ entry, compact = false }) {
+function ComparisonEntryMeta({
+  entry,
+  compact = false,
+  showOriginRule = true,
+  showHsCode = true,
+  showSelectedTariff = true,
+  className = '',
+}) {
   const selectedLabel = getSelectedTariffLabel(entry);
-  const className = [
+  const metaClassName = [
     'comparison-entry-meta',
     compact ? 'comparison-entry-meta--compact' : '',
+    className,
   ].filter(Boolean).join(' ');
 
   return (
-    <dl className={className}>
-      <div>
-        <dt>원산지 기준</dt>
-        <dd>{entry.originRule}</dd>
-      </div>
-      <div>
-        <dt>HS</dt>
-        <dd>{entry.hsCode}</dd>
-      </div>
-      <div>
-        <dt>채택 관세</dt>
-        <dd>
-          {entry.displayTariffDisplay}
-          {' '}
-          ({selectedLabel})
-        </dd>
-      </div>
+    <dl className={metaClassName}>
+      {showOriginRule ? (
+        <div>
+          <dt>원산지 기준</dt>
+          <dd>{entry.originRule}</dd>
+        </div>
+      ) : null}
+      {showHsCode ? (
+        <div>
+          <dt>HS</dt>
+          <dd>{entry.hsCode}</dd>
+        </div>
+      ) : null}
+      {showSelectedTariff ? (
+        <div>
+          <dt>채택 관세</dt>
+          <dd>
+            {entry.displayTariffDisplay}
+            {' '}
+            ({selectedLabel})
+          </dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -547,16 +573,18 @@ function DesktopGroupedComparisonSection({ graphModel, collapsedGroups, onToggle
 }
 
 function MobileCountryDetailEntry({ entry }) {
-  const selectedLabel = getSelectedTariffLabel(entry);
-
   return (
     <section className="comparison-mobile-detail-item">
-      <header className="comparison-mobile-detail-item__header">
+      <header className="comparison-mobile-detail-item__header comparison-mobile-detail-item__header--compact">
         <strong>HS {entry.hsCode}</strong>
-        <span className="comparison-source-pill">{selectedLabel} 채택</span>
       </header>
-      <ComparisonMiniTable entry={entry} compact />
-      <ComparisonEntryMeta entry={entry} compact />
+      <ComparisonEntryMeta
+        entry={entry}
+        compact
+        showHsCode={false}
+        showSelectedTariff={false}
+        className="comparison-entry-meta--mobile-compact"
+      />
     </section>
   );
 }
@@ -813,7 +841,14 @@ function MobileGroupedComparisonSection({ graphModel, collapsedGroups, onToggleG
 
   return (
     <section className="panel">
-      <div className="panel__header panel__header--mobile-graph panel__header--comparison-mobile">
+      <div
+        className={[
+          'panel__header',
+          'panel__header--mobile-graph',
+          'panel__header--comparison-mobile',
+          graphModel.mode === 'graph-by-export' ? 'panel__header--comparison-mobile-export' : '',
+        ].filter(Boolean).join(' ')}
+      >
         <div>
           <h2>{graphModel.title}</h2>
         </div>
@@ -822,6 +857,7 @@ function MobileGroupedComparisonSection({ graphModel, collapsedGroups, onToggleG
           axisTitle={graphModel.axisTitle}
           totalCountryCount={totalCountryCount}
           showSelectedLegend={shouldShowSelectedLegendInMobile(graphModel.mode)}
+          graphMode={graphModel.mode}
         />
       </div>
 
