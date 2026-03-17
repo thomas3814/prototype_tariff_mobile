@@ -984,6 +984,16 @@ button {
   -ms-overflow-style: none;
 }
 
+.panel__header--comparison-mobile-export h2 {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.mobile-graph-summary--graph-by-export {
+  font-size: 0.58rem;
+}
+
 .mobile-graph-summary::-webkit-scrollbar {
   display: none;
 }
@@ -2654,6 +2664,69 @@ button {
   align-items: stretch;
 }
 
+.comparison-mobile-card--export-mode .comparison-mobile-frame__shell {
+  min-height: 1.82rem;
+  padding: 0.06rem 0.1rem 0.08rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-frame__box {
+  min-height: 1.48rem;
+  font-size: 0.58rem;
+  border-radius: 9px;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-frame__selected-dot {
+  top: 0.16rem;
+  right: 0.16rem;
+  width: 0.32rem;
+  height: 0.32rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-frame__country {
+  max-width: 74%;
+  font-size: clamp(0.4rem, 1.7vw, 0.5rem);
+  bottom: 0.01rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-card__details {
+  gap: 4px;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-detail-item {
+  gap: 6px;
+  padding: 8px;
+}
+
+.comparison-mobile-card--export-mode .comparison-mobile-detail-item__header strong {
+  font-size: 0.74rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-source-pill {
+  min-height: 1.24rem;
+  padding: 0 6px;
+  font-size: 0.62rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mini-table--compact .comparison-mini-table__head {
+  font-size: 0.5rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mini-table--compact .comparison-mini-table__cell {
+  min-height: 2.34rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-mini-table--compact .comparison-mini-table__value {
+  font-size: 0.66rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-entry-meta--compact dt {
+  font-size: 0.64rem;
+}
+
+.comparison-mobile-card--export-mode .comparison-entry-meta--compact dd {
+  font-size: 0.72rem;
+}
+
 .comparison-mobile-frame {
   width: 100%;
 }
@@ -2821,6 +2894,10 @@ button {
   margin-inline: auto;
 }
 
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-left:last-child {
+  grid-column: 1;
+}
+
 .mobile-continent-list--pair-single .mobile-continent-section--single-country .comparison-mobile-card {
   width: min(100%, calc(var(--comparison-mobile-summary-max-width, 6.2rem) + 0.5rem));
 }
@@ -2858,18 +2935,40 @@ button {
     width: min(100%, var(--comparison-mobile-summary-max-width, 5.8rem));
   }
 
+  .panel__header--comparison-mobile-export h2 {
+    font-size: 0.92rem;
+  }
+
   .comparison-mobile-card--expanded .comparison-mobile-card__summary {
     width: 100%;
     max-width: none;
+  }
+
+  .mobile-graph-summary--graph-by-export {
+    font-size: 0.55rem;
   }
 
   .comparison-mobile-frame__shell {
     padding: 0.08rem 0.1rem 0.1rem;
   }
 
+  .comparison-mobile-card--export-mode .comparison-mobile-frame__shell {
+    min-height: 1.72rem;
+    padding: 0.05rem 0.08rem 0.07rem;
+  }
+
   .comparison-mobile-frame__box {
     min-height: 1.52rem;
     font-size: 0.58rem;
+  }
+
+  .comparison-mobile-card--export-mode .comparison-mobile-frame__box {
+    min-height: 1.4rem;
+    font-size: 0.54rem;
+  }
+
+  .comparison-mobile-card--export-mode .comparison-mobile-frame__country {
+    font-size: clamp(0.38rem, 1.6vw, 0.46rem);
   }
 
   .mobile-continent-list--pair-single {

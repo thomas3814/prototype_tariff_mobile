@@ -158,6 +158,52 @@ function mergeEquivalentCountryItems(countryItems) {
   }));
 }
 
+function applySingleCountryPairSlots(groups) {
+  const result = [];
+  let pendingSingleGroups = [];
+
+  function flushPendingSingles() {
+    if (pendingSingleGroups.length === 1) {
+      result.push({
+        ...pendingSingleGroups[0],
+        singleCountryPairSlot: 'center',
+      });
+    } else if (pendingSingleGroups.length === 2) {
+      result.push(
+        {
+          ...pendingSingleGroups[0],
+          singleCountryPairSlot: 'left',
+        },
+        {
+          ...pendingSingleGroups[1],
+          singleCountryPairSlot: 'right',
+        },
+      );
+    }
+
+    pendingSingleGroups = [];
+  }
+
+  groups.forEach((group) => {
+    if (group.countries.length === 1) {
+      pendingSingleGroups.push(group);
+
+      if (pendingSingleGroups.length === 2) {
+        flushPendingSingles();
+      }
+
+      return;
+    }
+
+    flushPendingSingles();
+    result.push(group);
+  });
+
+  flushPendingSingles();
+
+  return result;
+}
+
 function MobileGraphSummary({ fixedCountryLabel, axisTitle, totalCountryCount, showSelectedLegend = false }) {
   return (
     <div className="mobile-graph-summary" aria-label="모바일 그래프 요약 정보">
@@ -682,6 +728,7 @@ function MobileContinentSection({
     graphMode === 'graph-by-export' ? 'mobile-continent-section--export' : '',
     graphMode === 'graph-by-import' ? 'mobile-continent-section--import' : '',
     group.countries.length === 1 ? 'mobile-continent-section--single-country' : '',
+    group.singleCountryPairSlot ? `mobile-continent-section--slot-${group.singleCountryPairSlot}` : '',
     isSectionExpanded ? 'mobile-continent-section--expanded' : '',
   ].filter(Boolean).join(' ');
 
@@ -734,8 +781,8 @@ function MobileGroupedComparisonSection({ graphModel, collapsedGroups, onToggleG
     () => graphModel.groups.filter((group) => Boolean(collapsedGroups?.[group.continent])),
     [graphModel, collapsedGroups],
   );
-  const expandedGroupList = useMemo(
-    () => graphModel.groups
+  const expandedGroupList = useMemo(() => {
+    const visibleGroups = graphModel.groups
       .filter((group) => !collapsedGroups?.[group.continent])
       .map((group) => {
         if (graphModel.mode !== 'graph-by-import') {
@@ -746,9 +793,14 @@ function MobileGroupedComparisonSection({ graphModel, collapsedGroups, onToggleG
           ...group,
           displayCountries: mergeEquivalentCountryItems(group.countries),
         };
-      }),
-    [graphModel, collapsedGroups],
-  );
+      });
+
+    if (graphModel.mode !== 'graph-by-export') {
+      return visibleGroups;
+    }
+
+    return applySingleCountryPairSlots(visibleGroups);
+  }, [graphModel, collapsedGroups]);
   const uniformToggleWidth = useMemo(
     () => getUniformContinentToggleWidth(graphModel.groups),
     [graphModel],

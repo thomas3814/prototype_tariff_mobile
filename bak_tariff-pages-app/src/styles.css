@@ -2797,6 +2797,30 @@ button {
   align-items: flex-start;
 }
 
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-left .mobile-continent-section__countries {
+  justify-content: flex-start;
+}
+
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-right .mobile-continent-section__countries {
+  justify-content: flex-end;
+}
+
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-center .mobile-continent-section__countries {
+  justify-content: center;
+}
+
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-left .comparison-mobile-card {
+  margin-inline: 0 auto;
+}
+
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-right .comparison-mobile-card {
+  margin-inline: auto 0;
+}
+
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--slot-center .comparison-mobile-card {
+  margin-inline: auto;
+}
+
 .mobile-continent-list--pair-single .mobile-continent-section--single-country .comparison-mobile-card {
   width: min(100%, calc(var(--comparison-mobile-summary-max-width, 6.2rem) + 0.5rem));
 }
