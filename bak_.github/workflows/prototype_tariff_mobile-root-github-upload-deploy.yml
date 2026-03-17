@@ -1,0 +1,70 @@
+name: Deploy tariff pages from repo root
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'tariff-pages-app/source-data/**'
+      - 'tariff-pages-app/public/**'
+      - 'tariff-pages-app/src/**'
+      - 'tariff-pages-app/scripts/**'
+      - 'tariff-pages-app/index.html'
+      - 'tariff-pages-app/package.json'
+      - 'tariff-pages-app/package-lock.json'
+      - 'tariff-pages-app/vite.config.js'
+      - 'tariff-pages-app/eslint.config.js'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: 'npm'
+          cache-dependency-path: 'tariff-pages-app/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: tariff-pages-app
+        run: npm ci
+
+      - name: Generate tariff snapshot from source workbook
+        working-directory: tariff-pages-app
+        run: npm run sync:data -- "./source-data/tariff-source.xlsx"
+
+      - name: Build
+        working-directory: tariff-pages-app
+        run: npm run build
+        env:
+          VITE_GITHUB_SOURCE_FILE_PATH: tariff-pages-app/source-data/tariff-source.xlsx
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './tariff-pages-app/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
