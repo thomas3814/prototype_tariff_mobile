@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import AdaptiveTariffValue from './AdaptiveTariffValue.jsx';
 import { getNumericTariffValue } from '../shared/tariffFormat.js';
 
 function getSelectedTariffKey(entry) {
@@ -279,6 +280,8 @@ function ComparisonMiniTable({ entry, compact = false }) {
     'comparison-mini-table',
     compact ? 'comparison-mini-table--compact' : '',
   ].filter(Boolean).join(' ');
+  const compactMaxFontSizeRem = 0.72;
+  const compactMinFontSizeRem = 0.34;
 
   return (
     <div className={className} aria-label="협정 및 기본 관세 비교 표">
@@ -292,7 +295,15 @@ function ComparisonMiniTable({ entry, compact = false }) {
           selectedKey === 'agreement' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <span className="comparison-mini-table__value">{entry?.agreementTariffDisplay ?? '-'}</span>
+        <AdaptiveTariffValue
+          className="comparison-mini-table__value"
+          value={entry?.agreementTariffDisplay ?? '-'}
+          maxFontSizeRem={compact ? compactMaxFontSizeRem : 0.76}
+          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
+          stepRem={compact ? 0.01 : 0.02}
+          reservedInlinePx={compact && selectedKey === 'agreement' ? 10 : 0}
+          overflowMode={compact ? 'clip' : 'ellipsis'}
+        />
         {selectedKey === 'agreement' ? (
           <span className="comparison-mini-table__badge">채택</span>
         ) : null}
@@ -305,7 +316,15 @@ function ComparisonMiniTable({ entry, compact = false }) {
           selectedKey === 'base' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <span className="comparison-mini-table__value">{entry?.baseTariffDisplay ?? '-'}</span>
+        <AdaptiveTariffValue
+          className="comparison-mini-table__value"
+          value={entry?.baseTariffDisplay ?? '-'}
+          maxFontSizeRem={compact ? compactMaxFontSizeRem : 0.76}
+          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
+          stepRem={compact ? 0.01 : 0.02}
+          reservedInlinePx={compact && selectedKey === 'base' ? 10 : 0}
+          overflowMode={compact ? 'clip' : 'ellipsis'}
+        />
         {selectedKey === 'base' ? (
           <span className="comparison-mini-table__badge">채택</span>
         ) : null}
@@ -617,7 +636,12 @@ function MobilePcStyleValueBox({ value, variant, selected, showSelectedMarker = 
       {selected && showSelectedMarker ? (
         <span className="comparison-mobile-frame__selected-dot" aria-hidden="true" />
       ) : null}
-      <span className="comparison-mobile-frame__box-value">{value ?? '-'}</span>
+      <AdaptiveTariffValue
+        className="comparison-mobile-frame__box-value"
+        value={value ?? '-'}
+        maxFontSizeRem={0.64}
+        minFontSizeRem={0.48}
+      />
     </span>
   );
 }

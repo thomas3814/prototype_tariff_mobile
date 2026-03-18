@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import AdaptiveTariffValue from './AdaptiveTariffValue.jsx';
 import { getNumericTariffValue } from '../shared/tariffFormat.js';
 
 function getSelectedTariffKey(entry) {
@@ -292,7 +293,12 @@ function ComparisonMiniTable({ entry, compact = false }) {
           selectedKey === 'agreement' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <span className="comparison-mini-table__value">{entry?.agreementTariffDisplay ?? '-'}</span>
+        <AdaptiveTariffValue
+          className="comparison-mini-table__value"
+          value={entry?.agreementTariffDisplay ?? '-'}
+          maxFontSizeRem={compact ? 0.72 : 0.76}
+          minFontSizeRem={compact ? 0.52 : 0.56}
+        />
         {selectedKey === 'agreement' ? (
           <span className="comparison-mini-table__badge">채택</span>
         ) : null}
@@ -305,7 +311,12 @@ function ComparisonMiniTable({ entry, compact = false }) {
           selectedKey === 'base' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <span className="comparison-mini-table__value">{entry?.baseTariffDisplay ?? '-'}</span>
+        <AdaptiveTariffValue
+          className="comparison-mini-table__value"
+          value={entry?.baseTariffDisplay ?? '-'}
+          maxFontSizeRem={compact ? 0.72 : 0.76}
+          minFontSizeRem={compact ? 0.52 : 0.56}
+        />
         {selectedKey === 'base' ? (
           <span className="comparison-mini-table__badge">채택</span>
         ) : null}
@@ -617,7 +628,12 @@ function MobilePcStyleValueBox({ value, variant, selected, showSelectedMarker = 
       {selected && showSelectedMarker ? (
         <span className="comparison-mobile-frame__selected-dot" aria-hidden="true" />
       ) : null}
-      <span className="comparison-mobile-frame__box-value">{value ?? '-'}</span>
+      <AdaptiveTariffValue
+        className="comparison-mobile-frame__box-value"
+        value={value ?? '-'}
+        maxFontSizeRem={0.64}
+        minFontSizeRem={0.48}
+      />
     </span>
   );
 }

@@ -1203,12 +1203,20 @@ button {
   font-size: 0.84rem;
 }
 
+.view-mode-switch-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 4px 0 0;
+  text-align: center;
+}
+
 .view-mode-switch {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 4px 0 0;
+  padding: 0;
   text-align: center;
 }
 
@@ -1231,6 +1239,13 @@ button {
 .view-mode-switch__divider {
   color: rgba(148, 163, 184, 0.75);
   font-size: 11px;
+}
+
+.view-mode-switch__version {
+  color: rgba(148, 163, 184, 0.52);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 :root[data-theme='light'] .mobile-graph-summary {
@@ -1305,6 +1320,10 @@ button {
 
 :root[data-theme='light'] .view-mode-switch__divider {
   color: rgba(100, 116, 139, 0.82);
+}
+
+:root[data-theme='light'] .view-mode-switch__version {
+  color: rgba(100, 116, 139, 0.68);
 }
 
 @media (max-width: 720px) {
@@ -1926,7 +1945,7 @@ button {
 }
 
 .comparison-country-card {
-  width: clamp(86px, 7.9vw, 92px);
+  width: clamp(90px, 8.2vw, 98px);
   display: grid;
   gap: 8px;
   padding: 10px 6px;
@@ -2025,6 +2044,19 @@ button {
   background: rgba(30, 41, 59, 0.98);
 }
 
+.adaptive-tariff-value {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adaptive-tariff-value--clip {
+  text-overflow: clip;
+}
+
 .comparison-mini-table__value {
   font-size: 0.76rem;
   font-weight: 800;
@@ -2050,7 +2082,7 @@ button {
 }
 
 .comparison-mini-table--compact {
-  gap: 3px;
+  gap: 2px;
 }
 
 .comparison-mini-table--compact .comparison-mini-table__head {
@@ -2059,12 +2091,21 @@ button {
 
 .comparison-mini-table--compact .comparison-mini-table__cell {
   min-height: 2.55rem;
-  padding: 6px 4px 4px;
+  padding: 6px 2px 4px;
   border-radius: 10px;
 }
 
 .comparison-mini-table--compact .comparison-mini-table__value {
   font-size: 0.72rem;
+  letter-spacing: -0.03em;
+}
+
+.comparison-mini-table--compact .comparison-mini-table__badge {
+  top: 3px;
+  right: 3px;
+  min-height: 0.76rem;
+  padding: 0 3px;
+  font-size: 0.42rem;
 }
 
 .comparison-entry-meta {
@@ -2854,6 +2895,10 @@ button {
 }
 
 .comparison-mobile-frame__box-value {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }

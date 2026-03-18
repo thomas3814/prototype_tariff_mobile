@@ -1203,12 +1203,20 @@ button {
   font-size: 0.84rem;
 }
 
+.view-mode-switch-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 4px 0 0;
+  text-align: center;
+}
+
 .view-mode-switch {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 4px 0 0;
+  padding: 0;
   text-align: center;
 }
 
@@ -1231,6 +1239,13 @@ button {
 .view-mode-switch__divider {
   color: rgba(148, 163, 184, 0.75);
   font-size: 11px;
+}
+
+.view-mode-switch__version {
+  color: rgba(148, 163, 184, 0.52);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 :root[data-theme='light'] .mobile-graph-summary {
@@ -1305,6 +1320,10 @@ button {
 
 :root[data-theme='light'] .view-mode-switch__divider {
   color: rgba(100, 116, 139, 0.82);
+}
+
+:root[data-theme='light'] .view-mode-switch__version {
+  color: rgba(100, 116, 139, 0.68);
 }
 
 @media (max-width: 720px) {
@@ -2023,6 +2042,15 @@ button {
   border-color: rgba(96, 165, 250, 0.38);
   box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.18);
   background: rgba(30, 41, 59, 0.98);
+}
+
+.adaptive-tariff-value {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .comparison-mini-table__value {
@@ -2854,6 +2882,10 @@ button {
 }
 
 .comparison-mobile-frame__box-value {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -3036,5 +3068,55 @@ button {
 
   .mobile-continent-list--pair-single {
     gap: 4px;
+  }
+}
+
+
+/* v0.39: mobile expanded-card width alignment harmonized across continents */
+.mobile-continent-list--pair-single .mobile-continent-section--single-country.mobile-continent-section--expanded {
+  grid-column: auto;
+}
+
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode {
+  grid-column: auto;
+  width: min(100%, calc(var(--comparison-mobile-summary-max-width, 6.2rem) + 0.7rem));
+  max-width: calc(var(--comparison-mobile-summary-max-width, 6.2rem) + 0.7rem);
+  justify-self: center;
+}
+
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-mobile-card__summary,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-mobile-card__summary {
+  width: 100%;
+  max-width: none;
+}
+
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-mobile-card__details,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-mobile-card__details,
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-mobile-detail-item,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-mobile-detail-item,
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-mobile-detail-item__header,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-mobile-detail-item__header,
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-entry-meta--mobile-compact,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-entry-meta--mobile-compact,
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-entry-meta--mobile-compact div,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-entry-meta--mobile-compact div {
+  min-width: 0;
+}
+
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-mobile-detail-item__header strong,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-mobile-detail-item__header strong,
+.comparison-mobile-card--expanded.comparison-mobile-card--export-mode .comparison-entry-meta--mobile-compact dd,
+.comparison-mobile-card--expanded.comparison-mobile-card--import-mode .comparison-entry-meta--mobile-compact dd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 420px) {
+  .comparison-mobile-card--expanded.comparison-mobile-card--export-mode,
+  .comparison-mobile-card--expanded.comparison-mobile-card--import-mode {
+    width: min(100%, calc(var(--comparison-mobile-summary-max-width, 5.8rem) + 0.64rem));
+    max-width: calc(var(--comparison-mobile-summary-max-width, 5.8rem) + 0.64rem);
   }
 }
