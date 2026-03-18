@@ -274,12 +274,34 @@ function DesktopLegend({ showSelectedLegend = false }) {
   );
 }
 
-function ComparisonMiniTable({ entry, compact = false }) {
+function ComparisonMiniTable({
+  entry,
+  compact = false,
+  selectedMarkerStyle = 'badge',
+  compactMaxFontSizeRem = 0.72,
+  compactSelectedMaxFontSizeRem,
+  compactMinFontSizeRem = 0.34,
+  compactSelectedReservedInlinePx = 10,
+}) {
   const selectedKey = getSelectedTariffKey(entry);
   const className = [
     'comparison-mini-table',
     compact ? 'comparison-mini-table--compact' : '',
+    compact && selectedMarkerStyle === 'dot' ? 'comparison-mini-table--dot-selected' : '',
   ].filter(Boolean).join(' ');
+  const compactStepRem = 0.01;
+  const selectedCompactMaxFontSizeRem = compactSelectedMaxFontSizeRem ?? compactMaxFontSizeRem;
+  const selectedReservedInlinePx = selectedMarkerStyle === 'dot'
+    ? Math.min(compactSelectedReservedInlinePx, 4)
+    : compactSelectedReservedInlinePx;
+
+  function renderSelectedMarker() {
+    if (selectedMarkerStyle === 'dot') {
+      return <span className="comparison-mini-table__selected-dot" role="img" aria-label="채택" />;
+    }
+
+    return <span className="comparison-mini-table__badge">채택</span>;
+  }
 
   return (
     <div className={className} aria-label="협정 및 기본 관세 비교 표">
@@ -296,12 +318,15 @@ function ComparisonMiniTable({ entry, compact = false }) {
         <AdaptiveTariffValue
           className="comparison-mini-table__value"
           value={entry?.agreementTariffDisplay ?? '-'}
-          maxFontSizeRem={compact ? 0.72 : 0.76}
-          minFontSizeRem={compact ? 0.52 : 0.56}
+          maxFontSizeRem={compact
+            ? (selectedKey === 'agreement' ? selectedCompactMaxFontSizeRem : compactMaxFontSizeRem)
+            : 0.76}
+          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
+          stepRem={compact ? compactStepRem : 0.02}
+          reservedInlinePx={compact && selectedKey === 'agreement' ? selectedReservedInlinePx : 0}
+          overflowMode={compact ? 'clip' : 'ellipsis'}
         />
-        {selectedKey === 'agreement' ? (
-          <span className="comparison-mini-table__badge">채택</span>
-        ) : null}
+        {selectedKey === 'agreement' ? renderSelectedMarker() : null}
       </span>
 
       <span
@@ -314,12 +339,15 @@ function ComparisonMiniTable({ entry, compact = false }) {
         <AdaptiveTariffValue
           className="comparison-mini-table__value"
           value={entry?.baseTariffDisplay ?? '-'}
-          maxFontSizeRem={compact ? 0.72 : 0.76}
-          minFontSizeRem={compact ? 0.52 : 0.56}
+          maxFontSizeRem={compact
+            ? (selectedKey === 'base' ? selectedCompactMaxFontSizeRem : compactMaxFontSizeRem)
+            : 0.76}
+          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
+          stepRem={compact ? compactStepRem : 0.02}
+          reservedInlinePx={compact && selectedKey === 'base' ? selectedReservedInlinePx : 0}
+          overflowMode={compact ? 'clip' : 'ellipsis'}
         />
-        {selectedKey === 'base' ? (
-          <span className="comparison-mini-table__badge">채택</span>
-        ) : null}
+        {selectedKey === 'base' ? renderSelectedMarker() : null}
       </span>
     </div>
   );
@@ -368,7 +396,9 @@ function ComparisonEntryMeta({
   );
 }
 
-function DesktopCountryCard({ countryItem }) {
+function DesktopCountryCard({ countryItem, graphMode = '' }) {
+  const useDotSelectedMarker = graphMode === 'graph-by-export';
+
   return (
     <article className="comparison-country-card">
       <header className="comparison-country-card__header">
@@ -378,7 +408,13 @@ function DesktopCountryCard({ countryItem }) {
       <div className="comparison-country-card__entries">
         {countryItem.entries.map((entry) => (
           <section key={entry.rowKey} className="comparison-country-card__entry">
-            <ComparisonMiniTable entry={entry} compact />
+            <ComparisonMiniTable
+              entry={entry}
+              compact
+              selectedMarkerStyle={useDotSelectedMarker ? 'dot' : 'badge'}
+              compactSelectedMaxFontSizeRem={useDotSelectedMarker ? 0.82 : 0.72}
+              compactSelectedReservedInlinePx={useDotSelectedMarker ? 4 : 10}
+            />
             <details className="comparison-country-card__details">
               <summary>세부 정보</summary>
               <ComparisonEntryMeta entry={entry} compact />
@@ -437,7 +473,11 @@ function DesktopExpandedContinentSection({
 
         <div className="comparison-strip__countries">
           {group.countries.map((countryItem) => (
-            <DesktopCountryCard key={countryItem.country} countryItem={countryItem} />
+            <DesktopCountryCard
+              key={countryItem.country}
+              countryItem={countryItem}
+              graphMode={exportMode ? 'graph-by-export' : importMode ? 'graph-by-import' : ''}
+            />
           ))}
         </div>
       </section>
@@ -465,7 +505,11 @@ function DesktopExpandedContinentSection({
 
       <div className="comparison-strip__countries">
         {group.countries.map((countryItem) => (
-          <DesktopCountryCard key={countryItem.country} countryItem={countryItem} />
+          <DesktopCountryCard
+            key={countryItem.country}
+            countryItem={countryItem}
+            graphMode={exportMode ? 'graph-by-export' : importMode ? 'graph-by-import' : ''}
+          />
         ))}
       </div>
     </section>
@@ -616,7 +660,14 @@ function MobileRatePill({ label, value, variant, selected }) {
   );
 }
 
-function MobilePcStyleValueBox({ value, variant, selected, showSelectedMarker = false }) {
+function MobilePcStyleValueBox({
+  value,
+  variant,
+  selected,
+  showSelectedMarker = false,
+}) {
+  const displayValue = value ?? '-';
+
   return (
     <span
       className={[
@@ -628,12 +679,9 @@ function MobilePcStyleValueBox({ value, variant, selected, showSelectedMarker = 
       {selected && showSelectedMarker ? (
         <span className="comparison-mobile-frame__selected-dot" aria-hidden="true" />
       ) : null}
-      <AdaptiveTariffValue
-        className="comparison-mobile-frame__box-value"
-        value={value ?? '-'}
-        maxFontSizeRem={0.64}
-        minFontSizeRem={0.48}
-      />
+      <span className="comparison-mobile-frame__box-value" title={displayValue}>
+        {displayValue}
+      </span>
     </span>
   );
 }

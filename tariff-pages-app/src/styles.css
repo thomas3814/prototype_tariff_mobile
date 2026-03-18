@@ -2058,10 +2058,25 @@ button {
 }
 
 .comparison-mini-table__value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.comparison-mini-table__value--wrapped {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  min-height: 2.14rem;
 }
 
 .comparison-mini-table__badge {
@@ -2081,6 +2096,17 @@ button {
   letter-spacing: -0.03em;
 }
 
+.comparison-mini-table__selected-dot {
+  position: absolute;
+  top: 0.28rem;
+  right: 0.28rem;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-radius: 999px;
+  background: var(--comparison-selected-color);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.18);
+}
+
 .comparison-mini-table--compact {
   gap: 2px;
 }
@@ -2090,8 +2116,8 @@ button {
 }
 
 .comparison-mini-table--compact .comparison-mini-table__cell {
-  min-height: 2.55rem;
-  padding: 6px 2px 4px;
+  min-height: 3.4rem;
+  padding: 0.82rem 0.24rem 0.34rem;
   border-radius: 10px;
 }
 
@@ -2100,12 +2126,31 @@ button {
   letter-spacing: -0.03em;
 }
 
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__value {
+  line-height: 1.08;
+}
+
 .comparison-mini-table--compact .comparison-mini-table__badge {
   top: 3px;
   right: 3px;
   min-height: 0.76rem;
   padding: 0 3px;
   font-size: 0.42rem;
+}
+
+.comparison-mini-table--compact .comparison-mini-table__selected-dot {
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 0.32rem;
+  height: 0.32rem;
+}
+
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__cell--selected {
+  padding-top: 0.82rem;
+}
+
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__cell:not(.comparison-mini-table__cell--selected) {
+  padding-top: 0.64rem;
 }
 
 .comparison-entry-meta {
@@ -2728,27 +2773,27 @@ button {
 }
 
 .comparison-mobile-card--export-mode .comparison-mobile-frame__shell {
-  min-height: 1.82rem;
-  padding: 0.06rem 0.1rem 0.08rem;
+  min-height: 2.14rem;
+  padding: 0.1rem 0.1rem 0.48rem;
 }
 
 .comparison-mobile-card--export-mode .comparison-mobile-frame__box {
-  min-height: 1.48rem;
+  min-height: 1.7rem;
   font-size: 0.58rem;
   border-radius: 9px;
 }
 
 .comparison-mobile-card--export-mode .comparison-mobile-frame__selected-dot {
-  top: 0.16rem;
-  right: 0.16rem;
-  width: 0.32rem;
-  height: 0.32rem;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.3rem;
+  height: 0.3rem;
 }
 
 .comparison-mobile-card--export-mode .comparison-mobile-frame__country {
   max-width: 74%;
   font-size: clamp(0.4rem, 1.7vw, 0.5rem);
-  bottom: 0.01rem;
+  bottom: 0.1rem;
 }
 
 .comparison-mobile-card--export-mode .comparison-mobile-card__details {
@@ -2840,8 +2885,8 @@ button {
   display: flex;
   align-items: stretch;
   height: 100%;
-  min-height: 1.95rem;
-  padding: 0.08rem 0.12rem 0.12rem;
+  min-height: 2.32rem;
+  padding: 0.12rem 0.12rem 0.54rem;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.74);
@@ -2860,19 +2905,18 @@ button {
   position: relative;
   display: inline-flex;
   width: 100%;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   min-width: 0;
-  min-height: 1.6rem;
-  padding: 0.2rem 0.16rem;
+  min-height: 1.86rem;
+  padding: 0.28rem 0.2rem 0.22rem;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   font-size: 0.64rem;
   font-weight: 800;
-  line-height: 1.02;
+  line-height: 1.08;
   letter-spacing: -0.03em;
   text-align: center;
-  white-space: nowrap;
 }
 
 .comparison-mobile-frame__box--selected {
@@ -2895,20 +2939,32 @@ button {
 }
 
 .comparison-mobile-frame__box-value {
-  display: block;
+  display: flex;
   width: 100%;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-height: 1.26rem;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.comparison-mobile-frame__box--selected .comparison-mobile-frame__box-value {
+  padding-top: 0.08rem;
+  padding-right: 0.18rem;
 }
 
 .comparison-mobile-frame__selected-dot {
   position: absolute;
   top: 0.18rem;
-  right: 0.2rem;
-  width: 0.36rem;
-  height: 0.36rem;
+  right: 0.18rem;
+  width: 0.34rem;
+  height: 0.34rem;
   border-radius: 999px;
   background: var(--comparison-selected-color);
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.1), 0 2px 4px rgba(15, 23, 42, 0.2);
@@ -2917,7 +2973,7 @@ button {
 .comparison-mobile-frame__country {
   position: absolute;
   left: 50%;
-  bottom: 0.02rem;
+  bottom: 0.12rem;
   z-index: 2;
   max-width: 78%;
   padding: 0 0.2rem;
@@ -3057,21 +3113,22 @@ button {
   }
 
   .comparison-mobile-frame__shell {
-    padding: 0.08rem 0.1rem 0.1rem;
+    min-height: 2.18rem;
+    padding: 0.1rem 0.1rem 0.46rem;
   }
 
   .comparison-mobile-card--export-mode .comparison-mobile-frame__shell {
-    min-height: 1.72rem;
-    padding: 0.05rem 0.08rem 0.07rem;
+    min-height: 1.98rem;
+    padding: 0.08rem 0.08rem 0.4rem;
   }
 
   .comparison-mobile-frame__box {
-    min-height: 1.52rem;
+    min-height: 1.74rem;
     font-size: 0.58rem;
   }
 
   .comparison-mobile-card--export-mode .comparison-mobile-frame__box {
-    min-height: 1.4rem;
+    min-height: 1.6rem;
     font-size: 0.54rem;
   }
 
