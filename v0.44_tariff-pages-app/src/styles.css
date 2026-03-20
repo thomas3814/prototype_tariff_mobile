@@ -2058,10 +2058,25 @@ button {
 }
 
 .comparison-mini-table__value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.comparison-mini-table__value--wrapped {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  min-height: 2.14rem;
 }
 
 .comparison-mini-table__badge {
@@ -2101,14 +2116,18 @@ button {
 }
 
 .comparison-mini-table--compact .comparison-mini-table__cell {
-  min-height: 2.55rem;
-  padding: 6px 2px 4px;
+  min-height: 3.4rem;
+  padding: 0.82rem 0.24rem 0.34rem;
   border-radius: 10px;
 }
 
 .comparison-mini-table--compact .comparison-mini-table__value {
   font-size: 0.72rem;
   letter-spacing: -0.03em;
+}
+
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__value {
+  line-height: 1.08;
 }
 
 .comparison-mini-table--compact .comparison-mini-table__badge {
@@ -2120,10 +2139,18 @@ button {
 }
 
 .comparison-mini-table--compact .comparison-mini-table__selected-dot {
-  top: 0.18rem;
-  right: 0.18rem;
+  top: 0.2rem;
+  right: 0.2rem;
   width: 0.32rem;
   height: 0.32rem;
+}
+
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__cell--selected {
+  padding-top: 0.82rem;
+}
+
+.comparison-mini-table--compact.comparison-mini-table--multiline .comparison-mini-table__cell:not(.comparison-mini-table__cell--selected) {
+  padding-top: 0.64rem;
 }
 
 .comparison-entry-meta {

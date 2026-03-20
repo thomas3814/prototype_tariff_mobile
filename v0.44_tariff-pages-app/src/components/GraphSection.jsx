@@ -52,7 +52,7 @@ function getCompactAxisLabel(axisTitle) {
 }
 
 function shouldShowSelectedLegend(mode) {
-  return mode === 'graph-by-export';
+  return mode === 'graph-by-export' || mode === 'graph-by-import';
 }
 
 function shouldShowSelectedLegendInMobile(mode) {
@@ -278,22 +278,14 @@ function ComparisonMiniTable({
   entry,
   compact = false,
   selectedMarkerStyle = 'badge',
-  compactMaxFontSizeRem = 0.72,
-  compactSelectedMaxFontSizeRem,
-  compactMinFontSizeRem = 0.34,
-  compactSelectedReservedInlinePx = 10,
 }) {
   const selectedKey = getSelectedTariffKey(entry);
   const className = [
     'comparison-mini-table',
     compact ? 'comparison-mini-table--compact' : '',
+    compact ? 'comparison-mini-table--multiline' : '',
     compact && selectedMarkerStyle === 'dot' ? 'comparison-mini-table--dot-selected' : '',
   ].filter(Boolean).join(' ');
-  const compactStepRem = 0.01;
-  const selectedCompactMaxFontSizeRem = compactSelectedMaxFontSizeRem ?? compactMaxFontSizeRem;
-  const selectedReservedInlinePx = selectedMarkerStyle === 'dot'
-    ? Math.min(compactSelectedReservedInlinePx, 4)
-    : compactSelectedReservedInlinePx;
 
   function renderSelectedMarker() {
     if (selectedMarkerStyle === 'dot') {
@@ -301,6 +293,29 @@ function ComparisonMiniTable({
     }
 
     return <span className="comparison-mini-table__badge">채택</span>;
+  }
+
+  function renderTariffValue(value) {
+    const displayValue = value ?? '-';
+
+    if (compact) {
+      return (
+        <span className="comparison-mini-table__value comparison-mini-table__value--wrapped" title={displayValue}>
+          {displayValue}
+        </span>
+      );
+    }
+
+    return (
+      <AdaptiveTariffValue
+        className="comparison-mini-table__value"
+        value={displayValue}
+        maxFontSizeRem={0.76}
+        minFontSizeRem={0.56}
+        stepRem={0.02}
+        overflowMode="ellipsis"
+      />
+    );
   }
 
   return (
@@ -315,17 +330,7 @@ function ComparisonMiniTable({
           selectedKey === 'agreement' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <AdaptiveTariffValue
-          className="comparison-mini-table__value"
-          value={entry?.agreementTariffDisplay ?? '-'}
-          maxFontSizeRem={compact
-            ? (selectedKey === 'agreement' ? selectedCompactMaxFontSizeRem : compactMaxFontSizeRem)
-            : 0.76}
-          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
-          stepRem={compact ? compactStepRem : 0.02}
-          reservedInlinePx={compact && selectedKey === 'agreement' ? selectedReservedInlinePx : 0}
-          overflowMode={compact ? 'clip' : 'ellipsis'}
-        />
+        {renderTariffValue(entry?.agreementTariffDisplay)}
         {selectedKey === 'agreement' ? renderSelectedMarker() : null}
       </span>
 
@@ -336,17 +341,7 @@ function ComparisonMiniTable({
           selectedKey === 'base' ? 'comparison-mini-table__cell--selected' : '',
         ].filter(Boolean).join(' ')}
       >
-        <AdaptiveTariffValue
-          className="comparison-mini-table__value"
-          value={entry?.baseTariffDisplay ?? '-'}
-          maxFontSizeRem={compact
-            ? (selectedKey === 'base' ? selectedCompactMaxFontSizeRem : compactMaxFontSizeRem)
-            : 0.76}
-          minFontSizeRem={compact ? compactMinFontSizeRem : 0.56}
-          stepRem={compact ? compactStepRem : 0.02}
-          reservedInlinePx={compact && selectedKey === 'base' ? selectedReservedInlinePx : 0}
-          overflowMode={compact ? 'clip' : 'ellipsis'}
-        />
+        {renderTariffValue(entry?.baseTariffDisplay)}
         {selectedKey === 'base' ? renderSelectedMarker() : null}
       </span>
     </div>
@@ -397,7 +392,7 @@ function ComparisonEntryMeta({
 }
 
 function DesktopCountryCard({ countryItem, graphMode = '' }) {
-  const useDotSelectedMarker = graphMode === 'graph-by-export';
+  const useDotSelectedMarker = graphMode === 'graph-by-export' || graphMode === 'graph-by-import';
 
   return (
     <article className="comparison-country-card">
@@ -412,8 +407,6 @@ function DesktopCountryCard({ countryItem, graphMode = '' }) {
               entry={entry}
               compact
               selectedMarkerStyle={useDotSelectedMarker ? 'dot' : 'badge'}
-              compactSelectedMaxFontSizeRem={useDotSelectedMarker ? 0.82 : 0.72}
-              compactSelectedReservedInlinePx={useDotSelectedMarker ? 4 : 10}
             />
             <details className="comparison-country-card__details">
               <summary>세부 정보</summary>

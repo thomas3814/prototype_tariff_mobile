@@ -1,0 +1,8 @@
+[V0.45 변경사항]
+1. 홈화면 바로가기 아이콘 최소 대응 적용
+   - Android용: manifest.webmanifest 추가
+   - Android용 아이콘: icon-192.png, icon-512.png 반영
+   - iPhone용: apple-touch-icon.png 반영
+   - index.html head에 manifest / apple-touch-icon 링크 추가
+2. 앱 하단 버전 표기 v 0.45로 갱신
+3. dist / docs 최신 빌드 반영
